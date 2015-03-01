@@ -26,7 +26,7 @@ static inline void cpus_online_all(void)
 {
 	unsigned int cpu;
 
-	for (cpu = 1; cpu < 8; cpu++) {
+	for (cpu = 1; cpu < 7; cpu++) {
 		if (cpu_is_offline(cpu))
 			cpu_up(cpu);
 	}
@@ -38,7 +38,7 @@ static inline void cpus_offline_all(void)
 {
 	unsigned int cpu;
 
-	for (cpu = 7; cpu > 0; cpu--) {
+	for (cpu = 6; cpu > 0; cpu--) {
 		if (cpu_online(cpu))
 			cpu_down(cpu);
 	}
