@@ -9,7 +9,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * A simple hotplugging driver optimized for Octa Core CPUs
+ * A simple hotplugging driver optimized for Octa Core CPUs modified for Super Fusion
  */
 
 #include <linux/module.h>
@@ -21,15 +21,30 @@
 #include <linux/cpufreq.h>
 
 #define THUNDERPLUG "thunderplug"
+#define MAX_FREQ_SCREENOFF (5330000)
+#define MIN_FREQ_SCREENOFF (4000000)
+#define MAX_FREQ_SCREENON (1267200)
+
+static unsigned int max_freq_screenoff = MAX_FREQ_SCREENOFF;
+static unsigned int min_freq_screenoff = MIN_FREQ_SCREENOFF;
+static unsigned int max_freq_screenon = MAX_FREQ_SCREENON; 
+
+struct cpufreq_cpuinfo cpu_frequency;
 
 static inline void cpus_online_all(void)
 {
 	unsigned int cpu;
 
-	for (cpu = 1; cpu < 7; cpu++) {
+	for (cpu = 1; cpu < 8; cpu++) {
 		if (cpu_is_offline(cpu))
 			cpu_up(cpu);
 	}
+
+        for_each_possible_cpu(cpu) {
+                cpu_frequency.max_freq = max_freq_screenon;
+                cpu_frequency.min_freq = max_freq_screenon;
+        }
+        cpufreq_update_policy(cpu);
 
 	pr_info("%s: all cpus were onlined\n", THUNDERPLUG);
 }
@@ -38,10 +53,16 @@ static inline void cpus_offline_all(void)
 {
 	unsigned int cpu;
 
-	for (cpu = 6; cpu > 0; cpu--) {
+	for (cpu = 7; cpu > 0; cpu--) {
 		if (cpu_online(cpu))
 			cpu_down(cpu);
 	}
+
+        if (cpu == 8) {
+                cpu_frequency.max_freq = max_freq_screenoff;
+                cpu_frequency.min_freq = min_freq_screenoff;
+        }
+        cpufreq_update_policy(cpu);
 
 	pr_info("%s: all cpus were offlined\n", THUNDERPLUG);
 }
