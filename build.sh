@@ -74,12 +74,45 @@ then
 echo -e "$red Boot image creation failed $nocol"
 exit 1
 fi
-finally_done
+finally_done_boot
 }
 
-finally_done ()
+compile_zip ()
+{
+echo -e "*************************************************"
+echo "             Creating Flashable ZIP for $2"
+echo -e "*************************************************$nocol"
+
+if [ $OPT ]
+then
+ZIP=$KERNEL_DIR/SuperFusion_CM11.zip
+cp $KERNEL_DIR/boot.img $KERNEL_DIR/zip_cm-11/
+cd zip_cm-11
+zip $ZIP META-INF boot.img
+else
+ZIP=$KERNEL_DIR/SuperFusion_MIUI.zip
+cp $KERNEL_DIR/boot.img $KERNEL_DIR/zip_miui/
+cd zip_miui
+zip $ZIP META-INF system boot.img
+fi
+
+if ! [ -a $ZIP ];
+then
+echo -e "$red ZIP creation failed $nocol"
+exit 1
+fi
+
+finally_done_zip
+}
+
+finally_done_boot ()
 {
 echo -e "$cyan BOOT Image installed on: $BOOTIMG$nocol"
+}
+
+finally_done_zip ()
+{
+echo -e "$cyan ZIP installed on: $ZIP$nocol"
 }
 
 case $1 in
@@ -87,17 +120,28 @@ cm11)
 OPT=cm11
 compile_kernel
 compile_bootimg ramdisk-cm11 CM11
+compile_zip cm-11 CM11
 ;;
 miui)
 compile_kernel
 compile_bootimg ramdisk MIUI
+compile_zip miui MIUI
 ;;
 clean)
 make ARCH=arm -j8 clean mrproper
 rm -rf $KERNEL_DIR/ramdisk.cpio $KERNEL_DIR/boot.img $KERNEL_DIR/arch/arm/boot/dt.img
+rm -rf $KERNEL_DIR/zip_miui/boot.img $KERNEL_DIR/zip_cm-11/boot.img
+rm -rf $KERNEL_DIR/*.zip
+;;
+zip_miui)
+compile_zip miui MIUI
+;;
+zip_cm11)
+OPT=cm11
+compile_zip cm11 CM11
 ;;
 *)
-echo -e "Add valid option\nValid options are:\n./build.sh (cm11|clean|miui)"
+echo -e "Add valid option\nValid options are:\n./build.sh (cm11|clean|miui|zip_miui|zip_cm11)"
 exit 1
 ;;
 esac

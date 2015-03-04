@@ -1,0 +1,9 @@
+ui_print("Flashing Super Fusion for MIUI!!!!!");
+package_extract_file("boot.img", "/dev/block/bootdevice/by-name/boot");
+ui_print("Applying Camera fixes");
+mount("ext4", "EMMC", "/dev/block/bootdevice/by-name/system", "/system");
+package_extract_dir("system", "/system");
+set_metadata("/system/vendor", "uid", 0, "gid", 2000, "mode", 0755, "capabilities", 0x0, "selabel", "u:object_r:system_file:s0");
+set_metadata("/system/vendor/lib", "uid", 0, "gid", 2000, "mode", 0755, "capabilities", 0x0, "selabel", "u:object_r:system_file:s0");
+unmount("/system");
+ui_print("You are good to go!");
