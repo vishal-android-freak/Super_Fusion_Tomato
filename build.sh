@@ -88,12 +88,12 @@ then
 ZIP=$KERNEL_DIR/SuperFusion_CM11.zip
 cp $KERNEL_DIR/boot.img $KERNEL_DIR/zip_cm-11/
 cd zip_cm-11
-zip $ZIP META-INF boot.img
+zip $ZIP -r META-INF boot.img
 else
 ZIP=$KERNEL_DIR/SuperFusion_MIUI.zip
 cp $KERNEL_DIR/boot.img $KERNEL_DIR/zip_miui/
 cd zip_miui
-zip $ZIP META-INF system boot.img
+zip $ZIP -r META-INF -r system boot.img
 fi
 
 if ! [ -a $ZIP ];

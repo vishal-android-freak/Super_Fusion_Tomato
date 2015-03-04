@@ -9,7 +9,19 @@
 #
 # Normal rules
 #
+.*.
 *.zip
+*.o
+*.cmd
+*.map
+*.tmp
+*.tmp_*
+*.a
+*.s
+*.d
+*.version
+*.config
+*.config.old
 #
 # Top-level generic files
 #
