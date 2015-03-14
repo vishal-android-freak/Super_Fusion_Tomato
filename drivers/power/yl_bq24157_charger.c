@@ -1266,8 +1266,8 @@ static int bq24157_battery_is_writeable(struct power_supply *psy,
 	return rc;
 }
 
-/*add bengin by sunxiaogang@yulong.com 2014.12.09 no suspend on charging*/
-void set_wake_lock(struct bq24157_chip *chip)
+/*modify bengin by sunxiaogang@yulong.com 2015.03.10 distinguish to fan5405*/
+void bq24157_set_wake_lock(struct bq24157_chip *chip)
 {
         if ((chip->set_ivbus_max <= 2) || chip->charging_disabled)
         {
@@ -1278,7 +1278,7 @@ void set_wake_lock(struct bq24157_chip *chip)
             wake_lock(&chip->charging_wlock);
         }
 }
-/*add end*/
+/*modify end*/
 
 static int bq24157_battery_set_property(struct power_supply *psy,
 				       enum power_supply_property prop,
@@ -1339,8 +1339,8 @@ static void bq24157_external_power_changed(struct power_supply *psy)
 
 
 	rc = bq24157_set_ivbus_max(chip, chip->set_ivbus_max); //VBUS CURRENT
-        /*add by sunxiaogang@yulong.com no suspend on charging 2014.12.09*/
-        set_wake_lock(chip);
+        /*modify by sunxiaogang@yulong.com 2015.03.10 distinguish to fan5405*/
+        bq24157_set_wake_lock(chip);
 
 	power_supply_changed(&chip->batt_psy);
 	pr_info("current_limit = %d\n", chip->set_ivbus_max);
@@ -1536,52 +1536,30 @@ static int bq24157_int_pinctrl_init(struct bq24157_chip *chip)
 }
 
 ///bq24157 VBUS boost output in OTG mode. frankie. 2014.08.26 start.
-int bq24157_enable_otg_mode(void)
+int bq24157_enable_otg_mode(bool enable)
 {
-    int rc = 0;
+	int rc = 0;
 
-    printk(KERN_ERR "bq24157 OTG VBUS enable\n");
+	if (this_chip == NULL) {
+		return 0;
+	}
 
-    //OPA:1 HZ:0   ==> boost mode
-    //OPA:0 HZ:0   ==> charge mode
+	//OPA:1 HZ:0   ==> boost mode
+	//OPA:0 HZ:0   ==> charge mode
 
-    bq24157_masked_write(this_chip, BQ24157_CONTROL1,
-				OPA_MODE_MASK, 1);
-    bq24157_masked_write(this_chip, BQ24157_CONTROL1,
-				HZ_MODE_MASK, 0);
+	bq24157_masked_write(this_chip, BQ24157_CONTROL1,
+			OPA_MODE_MASK, enable ? 1 : 0);
+	bq24157_masked_write(this_chip, BQ24157_CONTROL1,
+			HZ_MODE_MASK, 0);
 
-    rc = bq24157_masked_write(this_chip, BQ24157_OREG,
-				OTG_EN, 1);
-    if (rc < 0)
-	dev_err(this_chip->dev, "Couldn't enable OTG mode rc=%d\n", rc);
-
-    return rc;
-}
-
-int bq24157_disable_otg_mode(void)
-{
-    int rc = 0;
-
-    printk(KERN_ERR "bq24157 OTG VBUS disable\n");
-
-    //OPA:1 HZ:0   ==> boost mode
-    //OPA:0 HZ:0   ==> charge mode
-    bq24157_masked_write(this_chip, BQ24157_CONTROL1,
-				OPA_MODE_MASK, 0);
-    bq24157_masked_write(this_chip, BQ24157_CONTROL1,
-				HZ_MODE_MASK, 0);
-
-    rc = bq24157_masked_write(this_chip, BQ24157_OREG,
-				OTG_EN, 0);
-    if (rc < 0)
-	dev_err(this_chip->dev, "Couldn't disable OTG mode rc=%d\n", rc);
+	rc = bq24157_masked_write(this_chip, BQ24157_OREG,
+			OTG_EN, enable ? 1 : 0);
+	if (rc < 0)
+		dev_err(this_chip->dev, "Couldn't %s OTG mode rc=%d\n",
+				enable ? "enable" : "disable", rc);
 	return rc;
-    return 0;
 }
 ///bq24157 VBUS boost output in OTG mode. frankie. 2014.08.26 end.
-
-
-
 
 #define BQ24157_IC_VENDER     0x02
 static int bq24157_probe(struct i2c_client *client, const struct i2c_device_id *id)
@@ -1625,7 +1603,6 @@ static int bq24157_probe(struct i2c_client *client, const struct i2c_device_id *
 		return -EINVAL;
 	} 
 	dev_err(&client->dev, "this IC is BQ24517,  probe \n");
-
 	/* 1. set charge safety register */
 	if (!chip->safe_curr)
 		chip->safe_curr = 1500;
